@@ -32,7 +32,6 @@
       margin: 0;
       font-size: 28px;
       font-weight: 700;
-      letter-spacing: -0.02em;
     }
 
     .subtitle {
@@ -42,7 +41,7 @@
     }
 
     .answer {
-      margin: 32px 0 12px;
+      margin: 30px 0 10px;
       font-size: 96px;
       font-weight: 900;
       letter-spacing: -0.05em;
@@ -54,7 +53,7 @@
     .reason {
       font-size: 15px;
       color: #cbd5f5;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .info {
@@ -65,7 +64,6 @@
 
     .info strong {
       color: #e5e7eb;
-      font-weight: 600;
     }
 
     a {
@@ -78,21 +76,25 @@
     }
 
     .footer {
-      margin-top: 26px;
+      margin-top: 20px;
       font-size: 12px;
       color: #64748b;
     }
 
-    /* Hidden admin hotspot */
-    #adminHotspot {
+    /* Discreet admin control */
+    #adminControl {
       position: fixed;
       bottom: 10px;
       right: 10px;
-      width: 20px;
-      height: 20px;
-      opacity: 0.06;
+      width: 18px;
+      height: 18px;
+      opacity: 0.08;
       cursor: pointer;
       user-select: none;
+    }
+
+    #adminControl:hover {
+      opacity: 0.25;
     }
   </style>
 </head>
@@ -116,77 +118,97 @@
       </div>
     </div>
 
-    <div class="footer" id="updated"></div>
+    <div id="updated" class="footer"></div>
   </div>
 
-  <div id="adminHotspot">🥒</div>
+  <!-- Discreet admin toggle -->
+  <div id="adminControl" title="">⚙️</div>
 
 <script>
 (() => {
   const answerEl  = document.getElementById("answer");
   const reasonEl  = document.getElementById("reason");
   const updatedEl = document.getElementById("updated");
+  const adminEl   = document.getElementById("adminControl");
 
-  const LS_FLIP = "pickling_override_flip";
+  const LS_OVERRIDE = "pickleball_override";
+
+  // SHA-256 hash of the admin password (default: PickleTime!)
   const ADMIN_PASSWORD_SHA256 =
     "de6b1f6d5fdbf9b5be0fca1436cf7a1bc88b7b6ce1a25c1a6b0fbe1c3db0f8d0";
 
-  function setAnswer(isYes, reason) {
-    answerEl.textContent = isYes ? "YES" : "NO";
-    answerEl.className = "answer " + (isYes ? "yes" : "no");
+  function getOverride() {
+    const v = localStorage.getItem(LS_OVERRIDE);
+    return v === "YES" || v === "NO" ? v : null;
+  }
+
+  function setOverride(val) {
+    if (val) localStorage.setItem(LS_OVERRIDE, val);
+    else localStorage.removeItem(LS_OVERRIDE);
+  }
+
+  function updateDisplay(result, reason) {
+    answerEl.textContent = result;
+    answerEl.className = "answer " + (result === "YES" ? "yes" : "no");
     reasonEl.textContent = reason;
     updatedEl.textContent = "Last updated: " + new Date().toLocaleString();
-  }
-
-  function getOverride() {
-    return localStorage.getItem(LS_FLIP) === "true";
-  }
-
-  function toggleOverride() {
-    localStorage.setItem(LS_FLIP, !getOverride());
-    init();
   }
 
   async function sha256(text) {
     const data = new TextEncoder().encode(text);
     const hash = await crypto.subtle.digest("SHA-256", data);
-    return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
+    return [...new Uint8Array(hash)]
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
   }
 
   async function openAdmin() {
     const pw = prompt("Admin password:");
     if (!pw) return;
-    if (await sha256(pw) === ADMIN_PASSWORD_SHA256) toggleOverride();
-    else alert("Incorrect password");
+
+    if (await sha256(pw) !== ADMIN_PASSWORD_SHA256) {
+      alert("Incorrect password");
+      return;
+    }
+
+    const current = getOverride();
+    const next = current === "YES" ? "NO" : "YES";
+    setOverride(next);
+    init();
   }
 
-  // Triple-click hidden hotspot
-  let clicks = 0;
-  document.getElementById("adminHotspot").addEventListener("click", () => {
-    clicks++;
-    setTimeout(() => clicks = 0, 800);
-    if (clicks >= 3) openAdmin();
-  });
+  /* Double-click */
+  adminEl.addEventListener("dblclick", openAdmin);
 
-  // --- SIMPLIFIED DECISION ---
-  async function init() {
+  /* Long-press (mobile-friendly) */
+  let pressTimer;
+  adminEl.addEventListener("mousedown", () => {
+    pressTimer = setTimeout(openAdmin, 1500);
+  });
+  adminEl.addEventListener("mouseup", () => clearTimeout(pressTimer));
+  adminEl.addEventListener("mouseleave", () => clearTimeout(pressTimer));
+
+  function init() {
     const today = new Date();
     const isTuesday = today.getDay() === 2;
 
-    // Default answer if not Tuesday
-    let yes = isTuesday;
+    let result = isTuesday ? "YES" : "NO";
     let reason = isTuesday
       ? "Looks good for pickleball."
       : "Not a scheduled pickleball day.";
 
-    // Apply override flip if active
-    if (getOverride()) yes = !yes;
+    const override = getOverride();
+    if (override) {
+      result = override;
+      reason = "Result manually set.";
+    }
 
-    setAnswer(yes, reason);
+    updateDisplay(result, reason);
   }
 
   init();
 })();
 </script>
+
 </body>
 </html>

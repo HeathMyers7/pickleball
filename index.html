@@ -1,216 +1,537 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Are We Pickling Today?</title>
-
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
-    body {
-      margin: 0;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f1f5f9;
-      color: #0f172a;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      text-align: center;
-      padding: 24px;
+    :root {
+      --green:  #4a7c59;
+      --lime:   #c8e63d;
+      --court:  #6bbfa3;
+      --dark:   #1a2e22;
+      --cream:  #f7f3e8;
     }
 
-    .card {
-      max-width: 520px;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: var(--dark);
+      color: var(--cream);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(107,191,163,0.07) 0px, rgba(107,191,163,0.07) 1px, transparent 1px, transparent 60px),
+        repeating-linear-gradient(0deg,  rgba(107,191,163,0.07) 0px, rgba(107,191,163,0.07) 1px, transparent 1px, transparent 60px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .floaters { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+    .floater {
+      position: absolute;
+      opacity: 0.12;
+      animation: drift linear infinite;
+    }
+    @keyframes drift {
+      0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+      5%   { opacity: 0.12; }
+      95%  { opacity: 0.12; }
+      100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 2;
       width: 100%;
-      background: #ffffff;
-      border-radius: 20px;
-      padding: 36px 28px;
-      box-shadow: 0 20px 40px rgba(15,23,42,.12);
+      max-width: 680px;
+      padding: 2.5rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    header { text-align: center; }
+
+    .paddle-icon {
+      font-size: 3.8rem;
+      display: block;
+      animation: bounce 2.4s ease-in-out infinite;
+      filter: drop-shadow(0 4px 12px rgba(200,230,61,0.4));
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0) rotate(-8deg); }
+      50%       { transform: translateY(-10px) rotate(8deg); }
     }
 
     h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: 700;
-      color: #0f172a;
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2.6rem, 8vw, 4.8rem);
+      letter-spacing: 0.04em;
+      line-height: 1;
+      color: var(--lime);
+      text-shadow: 4px 4px 0 var(--green), 8px 8px 0 rgba(0,0,0,0.3);
+      margin-top: 0.4rem;
     }
 
     .subtitle {
-      margin-top: 6px;
-      font-size: 14px;
-      color: #475569;
+      font-size: 0.85rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--court);
+      margin-top: 0.5rem;
+      opacity: 0.8;
     }
 
-    .answer {
-      margin: 32px 0 12px;
-      font-size: 96px;
-      font-weight: 900;
-      letter-spacing: -0.05em;
+    .answer-card {
+      width: 100%;
+      border-radius: 20px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: background 0.6s ease, box-shadow 0.6s ease;
+      animation: slideUp 0.7s cubic-bezier(0.16,1,0.3,1) both;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .yes { color: #16a34a; }
-    .no  { color: #dc2626; }
-
-    .reason {
-      font-size: 15px;
-      color: #334155;
-      margin-bottom: 26px;
+    .answer-card.yes {
+      background: linear-gradient(135deg, #2d5a3e 0%, #1e4030 100%);
+      box-shadow: 0 0 0 3px var(--lime), 0 20px 60px rgba(74,124,89,0.5);
+    }
+    .answer-card.no {
+      background: linear-gradient(135deg, #3a2020 0%, #2a1515 100%);
+      box-shadow: 0 0 0 3px #e05252, 0 20px 60px rgba(120,40,40,0.4);
+    }
+    .answer-card.loading {
+      background: linear-gradient(135deg, #1e2e28 0%, #1a2622 100%);
+      box-shadow: 0 0 0 2px rgba(107,191,163,0.3), 0 20px 60px rgba(0,0,0,0.4);
     }
 
-    .info {
-      font-size: 14px;
-      color: #334155;
-      line-height: 1.6;
-    }
-
-    .info strong {
-      color: #0f172a;
+    .answer-label {
+      font-size: 0.75rem;
       font-weight: 600;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      opacity: 0.6;
+      margin-bottom: 0.6rem;
     }
 
-    a {
-      color: #2563eb;
+    .answer-word {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(5rem, 22vw, 9rem);
+      line-height: 1;
+      letter-spacing: 0.05em;
+      transition: color 0.5s, text-shadow 0.5s;
+    }
+    .answer-card.yes     .answer-word { color: var(--lime); text-shadow: 0 0 40px rgba(200,230,61,0.5); }
+    .answer-card.no      .answer-word { color: #e05252;     text-shadow: 0 0 40px rgba(224,82,82,0.5); }
+    .answer-card.loading .answer-word { color: rgba(255,255,255,0.2); }
+
+    .answer-reason { font-size: 0.82rem; opacity: 0.65; margin-top: 0.6rem; }
+
+    .override-badge {
+      display: none;
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 999px;
+      font-size: 0.65rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.7rem;
+      color: rgba(255,255,255,0.5);
+    }
+    .override-badge.visible { display: inline-block; }
+
+    .weather-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 1.4rem;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(107,191,163,0.15);
+      border-radius: 14px;
+      padding: 1rem 1.5rem;
+      width: 100%;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+    }
+    .weather-pill { display: flex; align-items: center; gap: 0.4rem; color: var(--court); }
+    .weather-pill span:first-child { font-size: 1.2rem; }
+
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; }
+
+    .info-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(107,191,163,0.13);
+      border-radius: 16px;
+      padding: 1.3rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: background 0.2s;
+    }
+    .info-card:hover { background: rgba(255,255,255,0.07); }
+    .info-card.full  { grid-column: 1 / -1; }
+
+    .info-card-icon  { font-size: 1.6rem; }
+    .info-card-label { font-size: 0.68rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--court); opacity: 0.7; }
+    .info-card-value { font-size: 0.88rem; font-weight: 500; line-height: 1.4; }
+
+    .rules-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(135deg, #c8e63d, #a8c930);
+      color: var(--dark);
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 0.7rem 1.4rem;
+      border-radius: 999px;
       text-decoration: none;
+      letter-spacing: 0.04em;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px rgba(200,230,61,0.3);
+    }
+    .rules-link:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,230,61,0.45); }
+    .rules-link svg   { width: 18px; height: 18px; flex-shrink: 0; }
+
+    footer {
+      position: relative; z-index: 2;
+      padding: 1.5rem 1rem 2.5rem;
+      text-align: center;
+      font-size: 0.7rem;
+      color: rgba(247,243,232,0.2);
+      letter-spacing: 0.08em;
     }
 
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .footer {
-      margin-top: 22px;
-      font-size: 12px;
-      color: #64748b;
-    }
-
-    /* Discreet admin control */
-    #adminControl {
+    #override-trigger {
       position: fixed;
-      bottom: 10px;
-      right: 10px;
-      width: 18px;
-      height: 18px;
-      opacity: 0.06;
+      bottom: 14px; right: 18px;
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.08);
       cursor: pointer;
-      user-select: none;
+      z-index: 10;
+      transition: background 0.2s, transform 0.2s;
+    }
+    #override-trigger:hover { background: rgba(255,255,255,0.25); transform: scale(1.4); }
+
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7); z-index: 100;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(6px);
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #1e2e28;
+      border: 1px solid rgba(107,191,163,0.25);
+      border-radius: 20px; padding: 2rem;
+      width: 90%; max-width: 360px;
+      display: flex; flex-direction: column; gap: 1rem;
+      animation: popIn 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to   { opacity: 1; transform: scale(1); }
     }
 
-    #adminControl:hover {
-      opacity: 0.25;
+    .modal h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.06em; color: var(--lime); }
+    .modal p  { font-size: 0.82rem; color: rgba(247,243,232,0.6); }
+
+    .modal input {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(107,191,163,0.2);
+      border-radius: 10px; color: var(--cream);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.9rem; padding: 0.75rem 1rem;
+      outline: none; transition: border-color 0.2s;
+    }
+    .modal input:focus { border-color: var(--court); }
+    .modal input.shake { border-color: #e05252; animation: shake 0.3s; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-6px); }
+      75%      { transform: translateX(6px); }
+    }
+
+    .modal-actions { display: flex; gap: 0.7rem; }
+
+    .btn {
+      flex: 1; padding: 0.7rem; border: none;
+      border-radius: 10px; font-family: 'DM Sans', sans-serif;
+      font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .btn:hover   { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary { background: var(--lime); color: var(--dark); }
+    .btn-ghost   { background: rgba(255,255,255,0.07); color: var(--cream); }
+
+    .modal-status      { font-size: 0.8rem; min-height: 1.2em; }
+    .modal-status.ok   { color: var(--lime); }
+    .modal-status.err  { color: #e05252; }
+
+    @media (max-width: 440px) {
+      .info-grid { grid-template-columns: 1fr; }
+      .info-card.full { grid-column: 1; }
     }
   </style>
 </head>
 <body>
 
-  <div class="card">
+<div class="floaters" id="floaters"></div>
+
+<div class="wrapper">
+
+  <header>
+    <span class="paddle-icon">🏓</span>
     <h1>Are We Pickling Today?</h1>
-    <div class="subtitle">Pickleball • 4–6pm</div>
+    <p class="subtitle">Office Pickleball — Every Tuesday 4–6 PM</p>
+  </header>
 
-    <div id="answer" class="answer">…</div>
-    <div id="reason" class="reason">Checking…</div>
-
-    <div class="info">
-      <div><strong>Location:</strong> 7600 Bevelhymer Rd, New Albany</div>
-      <div><strong>Equipment:</strong> None needed</div>
-      <div>
-        <strong>Rules:</strong>
-        <a href="https://www.youtube.com/watch?v=pDDwZgepQeE" target="_blank">
-          Watch video
-        </a>
-      </div>
-    </div>
-
-    <div id="updated" class="footer"></div>
+  <div class="answer-card loading" id="answer-card">
+    <div class="answer-label">Game On?</div>
+    <div class="answer-word" id="answer-word">—</div>
+    <div class="answer-reason" id="answer-reason">Checking conditions…</div>
+    <span class="override-badge" id="override-badge">⚙ Override Active</span>
   </div>
 
-  <!-- Discreet admin toggle -->
-  <div id="adminControl" title="">⚙️</div>
+  <div class="weather-row">
+    <div class="weather-pill"><span>🌡️</span><span id="w-temp">—</span></div>
+    <div class="weather-pill"><span>☁️</span><span id="w-cond">Loading…</span></div>
+    <div class="weather-pill"><span>🌧️</span><span id="w-rain">—</span></div>
+    <div class="weather-pill"><span>💨</span><span id="w-wind">—</span></div>
+  </div>
+
+  <div class="info-grid">
+
+    <div class="info-card">
+      <div class="info-card-icon">📍</div>
+      <div class="info-card-label">Location</div>
+      <div class="info-card-value">7600 Bevelhymer Rd<br>New Albany, OH 43054</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-icon">🗓️</div>
+      <div class="info-card-label">Schedule</div>
+      <div class="info-card-value">Every Tuesday<br>4:00 PM – 6:00 PM</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-icon">🎒</div>
+      <div class="info-card-label">Equipment</div>
+      <div class="info-card-value">No gear needed —<br>just show up &amp; play!</div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-card-icon">🏅</div>
+      <div class="info-card-label">Skill Level</div>
+      <div class="info-card-value">All levels welcome.<br>Beginners encouraged!</div>
+    </div>
+
+    <div class="info-card full" style="flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <div class="info-card-icon">🎬</div>
+        <div class="info-card-label">New to pickleball?</div>
+        <div class="info-card-value">Watch the official rules video</div>
+      </div>
+      <a class="rules-link" href="https://www.youtube.com/watch?v=pDDwZgepQeE" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 15.5l6-3.5-6-3.5v7zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+        Watch Rules
+      </a>
+    </div>
+
+  </div>
+</div>
+
+<footer>Weather via wttr.in &middot; Updates each visit</footer>
+
+<div id="override-trigger"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3>Admin Override</h3>
+    <p>Enter the password to manually flip today's status.</p>
+    <input type="password" id="pw-input" placeholder="Password" autocomplete="off" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitOverride()">Confirm</button>
+    </div>
+    <div class="modal-status" id="modal-status"></div>
+  </div>
+</div>
 
 <script>
-(() => {
-  const answerEl  = document.getElementById("answer");
-  const reasonEl  = document.getElementById("reason");
-  const updatedEl = document.getElementById("updated");
-  const adminEl   = document.getElementById("adminControl");
+/* ── CONFIG ──────────────────────────────────── */
+const OVERRIDE_PASSWORD = "pickle123"; // change this!
+const PLAY_DAY        = 2;    // 0=Sun 1=Mon 2=Tue 3=Wed 4=Thu 5=Fri 6=Sat
+const MIN_TEMP_F      = 50;
+const MAX_RAIN_PCT    = 40;
+const MAX_WIND_MPH    = 25;
 
-  const LS_OVERRIDE = "pickleball_override";
-
-  // SHA-256 hash of admin password (default: PickleTime!)
-  const ADMIN_PASSWORD_SHA256 =
-    "de6b1f6d5fdbf9b5be0fca1436cf7a1bc88b7b6ce1a25c1a6b0fbe1c3db0f8d0";
-
-  function getOverride() {
-    const v = localStorage.getItem(LS_OVERRIDE);
-    return v === "YES" || v === "NO" ? v : null;
+/* ── FLOATERS ────────────────────────────────── */
+(function() {
+  const icons = ['🥒','🏓','🥒','🏓','🎾','🥒'];
+  const c = document.getElementById('floaters');
+  for (let i = 0; i < 12; i++) {
+    const el = document.createElement('div');
+    el.className = 'floater';
+    el.textContent = icons[i % icons.length];
+    el.style.cssText = `left:${Math.random()*100}vw;font-size:${1+Math.random()*1.2}rem;animation-duration:${18+Math.random()*22}s;animation-delay:${Math.random()*30}s`;
+    c.appendChild(el);
   }
-
-  function setOverride(val) {
-    if (val) localStorage.setItem(LS_OVERRIDE, val);
-    else localStorage.removeItem(LS_OVERRIDE);
-  }
-
-  function updateDisplay(result, reason) {
-    answerEl.textContent = result;
-    answerEl.className = "answer " + (result === "YES" ? "yes" : "no");
-    reasonEl.textContent = reason;
-    updatedEl.textContent = "Last updated: " + new Date().toLocaleString();
-  }
-
-  async function sha256(text) {
-    const data = new TextEncoder().encode(text);
-    const hash = await crypto.subtle.digest("SHA-256", data);
-    return [...new Uint8Array(hash)]
-      .map(b => b.toString(16).padStart(2, "0"))
-      .join("");
-  }
-
-  async function openAdmin() {
-    const pw = prompt("Admin password:");
-    if (!pw) return;
-
-    if (await sha256(pw) !== ADMIN_PASSWORD_SHA256) {
-      alert("Incorrect password");
-      return;
-    }
-
-    const current = getOverride();
-    const next = current === "YES" ? "NO" : "YES";
-    setOverride(next);
-    init();
-  }
-
-  /* Double-click */
-  adminEl.addEventListener("dblclick", openAdmin);
-
-  /* Long-press (mobile) */
-  let pressTimer;
-  adminEl.addEventListener("mousedown", () => {
-    pressTimer = setTimeout(openAdmin, 1500);
-  });
-  adminEl.addEventListener("mouseup", () => clearTimeout(pressTimer));
-  adminEl.addEventListener("mouseleave", () => clearTimeout(pressTimer));
-
-  function init() {
-    const today = new Date();
-    const isTuesday = today.getDay() === 2;
-
-    let result = isTuesday ? "YES" : "NO";
-    let reason = isTuesday
-      ? "Looks good for pickleball."
-      : "Not a scheduled pickleball day.";
-
-    const override = getOverride();
-    if (override) {
-      result = override;
-      reason = "Result manually set.";
-    }
-
-    updateDisplay(result, reason);
-  }
-
-  init();
 })();
-</script>
 
+/* ── STATE ───────────────────────────────────── */
+let overrideActive = false;
+let overrideValue  = null;
+
+/* ── WEATHER — wttr.in (free, no key, CORS-safe)
+   Hourly slots: "0","300","600","900","1200","1500","1800","2100"
+   4–6 PM uses slots "1500" (3 PM) and "1800" (6 PM)
+──────────────────────────────────────────────── */
+async function fetchWeather() {
+  const url = 'https://wttr.in/43054?format=j1';
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const data = await res.json();
+
+  const hourly = data.weather[0].hourly;
+  const slots  = hourly.filter(h => h.time === '1500' || h.time === '1800');
+  if (!slots.length) throw new Error('No afternoon data');
+
+  const temps = slots.map(h => Number(h.tempF));
+  const rains = slots.map(h => Number(h.chanceofrain));
+  const winds = slots.map(h => Number(h.windspeedMiles));
+  const codes = slots.map(h => Number(h.weatherCode));
+
+  const avgTemp = temps.reduce((a,b) => a+b, 0) / temps.length;
+  const maxRain = Math.max(...rains);
+  const maxWind = Math.max(...winds);
+
+  // wttr.in codes >= 176 indicate precipitation / hazardous conditions
+  const anyBad = codes.some(c => c >= 176);
+
+  const issues = [];
+  if (avgTemp < MIN_TEMP_F) issues.push(`too cold (${Math.round(avgTemp)}°F)`);
+  if (maxRain > MAX_RAIN_PCT) issues.push(`rain likely (${maxRain}%)`);
+  if (maxWind > MAX_WIND_MPH) issues.push(`too windy (${Math.round(maxWind)} mph)`);
+  if (anyBad) issues.push('poor weather forecast');
+
+  return {
+    playable: issues.length === 0,
+    reason:   issues.length ? 'Not ideal: ' + issues.join(', ') : 'Looks great out there!',
+    temp:     Math.round(avgTemp),
+    cond:     slots[0].weatherDesc?.[0]?.value ?? 'Unknown',
+    rain:     maxRain,
+    wind:     Math.round(maxWind)
+  };
+}
+
+/* ── LOGIC ───────────────────────────────────── */
+function computeAnswer(w) {
+  if (new Date().getDay() !== PLAY_DAY)
+    return { yes: false, reason: "Today isn't Tuesday — check back then!" };
+  return { yes: w.playable, reason: w.reason };
+}
+
+/* ── RENDER ──────────────────────────────────── */
+function renderAnswer(yes, reason, isOverride) {
+  document.getElementById('answer-card').className    = 'answer-card ' + (yes ? 'yes' : 'no');
+  document.getElementById('answer-word').textContent  = yes ? 'YES' : 'NO';
+  document.getElementById('answer-reason').textContent = reason;
+  document.getElementById('override-badge').className =
+    'override-badge' + (isOverride ? ' visible' : '');
+}
+
+function renderWeather(w) {
+  document.getElementById('w-temp').textContent = w.temp + '°F  (4–6 PM)';
+  document.getElementById('w-cond').textContent = w.cond;
+  document.getElementById('w-rain').textContent = w.rain + '% rain chance';
+  document.getElementById('w-wind').textContent = w.wind + ' mph wind';
+}
+
+/* ── INIT ────────────────────────────────────── */
+(async function init() {
+  try {
+    const w = await fetchWeather();
+    renderWeather(w);
+    const { yes, reason } = computeAnswer(w);
+    renderAnswer(overrideActive ? overrideValue : yes,
+                 overrideActive ? 'Status manually overridden.' : reason,
+                 overrideActive);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('answer-card').className    = 'answer-card loading';
+    document.getElementById('answer-word').textContent  = '?';
+    document.getElementById('answer-reason').textContent = 'Weather unavailable — try refreshing.';
+    document.getElementById('w-cond').textContent = 'Unavailable';
+  }
+})();
+
+/* ── OVERRIDE ────────────────────────────────── */
+let clicks = 0, clickTimer;
+document.getElementById('override-trigger').addEventListener('click', () => {
+  if (++clicks >= 3) { clicks = 0; clearTimeout(clickTimer); openModal(); return; }
+  clearTimeout(clickTimer);
+  clickTimer = setTimeout(() => clicks = 0, 2000);
+});
+
+function openModal() {
+  document.getElementById('pw-input').value = '';
+  document.getElementById('modal-status').textContent = '';
+  document.getElementById('pw-input').classList.remove('shake');
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('pw-input').focus(), 80);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function submitOverride() {
+  const inp = document.getElementById('pw-input');
+  const st  = document.getElementById('modal-status');
+  if (inp.value !== OVERRIDE_PASSWORD) {
+    inp.classList.remove('shake');
+    void inp.offsetWidth; // re-trigger animation
+    inp.classList.add('shake');
+    st.textContent = 'Incorrect password.';
+    st.className = 'modal-status err';
+    return;
+  }
+  overrideActive = true;
+  overrideValue  = document.getElementById('answer-word').textContent !== 'YES';
+  renderAnswer(overrideValue, 'Status manually overridden.', true);
+  st.textContent = 'Override applied — now showing ' + (overrideValue ? 'YES' : 'NO') + '.';
+  st.className = 'modal-status ok';
+  setTimeout(closeModal, 1300);
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitOverride(); });
+document.getElementById('modal-overlay').addEventListener('click', e => { if (e.target.id === 'modal-overlay') closeModal(); });
+</script>
 </body>
 </html>
